@@ -18,8 +18,6 @@ export function getDbUrl(): string | undefined {
   );
 
   if (envUrl) return envUrl;
-  
-  // If running in production / serverless context, fallback to Neon connection string
   if (isServerless) return DEFAULT_NEON_URL;
 
   return undefined;
@@ -53,22 +51,31 @@ function sanitizeParams(params: any[]): any[] {
   return params.map((p) => (p === undefined ? null : p));
 }
 
+async function runNeonQuery(url: string, sqlStr: string, params: any[] = []): Promise<any> {
+  const sql = neon(url) as any;
+  const cleanParams = sanitizeParams(params);
+  if (typeof sql.query === 'function') {
+    return await sql.query(sqlStr, cleanParams);
+  }
+  return await sql(sqlStr, cleanParams);
+}
+
 export async function initNeonDb() {
   const url = getDbUrl();
   if (!url || neonInitDone) return;
   neonInitDone = true;
 
   try {
-    const sql = neon(url) as any;
-
-    await sql(`
+    await runNeonQuery(url, `
       CREATE TABLE IF NOT EXISTS family_members (
         id SERIAL PRIMARY KEY,
         name TEXT UNIQUE NOT NULL,
         avatar_color TEXT DEFAULT '#2563EB',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
 
+    await runNeonQuery(url, `
       CREATE TABLE IF NOT EXISTS items (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
@@ -91,7 +98,9 @@ export async function initNeonDb() {
         receipt_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
 
+    await runNeonQuery(url, `
       CREATE TABLE IF NOT EXISTS bills (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -105,7 +114,9 @@ export async function initNeonDb() {
         last_paid_date TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
 
+    await runNeonQuery(url, `
       CREATE TABLE IF NOT EXISTS water_rotation (
         id SERIAL PRIMARY KEY,
         building_name TEXT DEFAULT 'ماء العمارة',
@@ -116,7 +127,9 @@ export async function initNeonDb() {
         last_payment_date TEXT,
         notes TEXT
       );
+    `);
 
+    await runNeonQuery(url, `
       CREATE TABLE IF NOT EXISTS rent_payments (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -129,7 +142,9 @@ export async function initNeonDb() {
         receipt_url TEXT,
         notes TEXT
       );
+    `);
 
+    await runNeonQuery(url, `
       CREATE TABLE IF NOT EXISTS maintenance (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -147,71 +162,72 @@ export async function initNeonDb() {
     `);
 
     // Seed Family Members if empty
-    const membersCount = await sql`SELECT COUNT(*)::int as count FROM family_members`;
+    const membersCount = await runNeonQuery(url, `SELECT COUNT(*)::int as count FROM family_members`);
     if (membersCount[0]?.count === 0) {
-      await sql`INSERT INTO family_members (name, avatar_color) VALUES ('أبو القاسم', '#2563EB'), ('يمنى', '#DB2777'), ('مأمون', '#059669'), ('هالة', '#7C3AED') ON CONFLICT (name) DO NOTHING`;
+      await runNeonQuery(url, `INSERT INTO family_members (name, avatar_color) VALUES ('أبو القاسم', '#2563EB'), ('يمنى', '#DB2777'), ('مأمون', '#059669'), ('هالة', '#7C3AED') ON CONFLICT (name) DO NOTHING`);
     }
 
     // Seed Items if empty
-    const itemsCount = await sql`SELECT COUNT(*)::int as count FROM items`;
+    const itemsCount = await runNeonQuery(url, `SELECT COUNT(*)::int as count FROM items`);
     if (itemsCount[0]?.count === 0) {
-      await sql`
+      await runNeonQuery(url, `
         INSERT INTO items (name, category, brand, model, serial_number, purchase_date, price, currency, purchased_by, store_name, store_phone, store_location, store_website, warranty_duration_months, warranty_expiration, warranty_type, notes)
         VALUES 
         ('تلفزيون إل جي 65 بوصة 4K ذكي', 'إلكترونيات', 'LG', 'OLED65C3', 'LG-TV-994821-X', '2025-10-15', 5625, 'ر.س', 'أبو القاسم', 'إكسترا (eXtra)', '+966 9200 04444', 'فرع الطريق الدائري', 'https://www.extra.com', 12, '2026-10-15', 'ضمان الشركة المصنعة', 'تم الشراء أثناء العروض السنوية. مضاف معه حامل جداري.'),
         ('مكنسة دايسون V15 اللاسلكية', 'أجهزة منزلية', 'Dyson', 'V15 Detect', 'DY-V15-88310-A', '2026-01-10', 2800, 'ر.س', 'يمنى', 'جرير (Jarir Bookstore)', '+966 9200 00089', 'فرع مجمع العرب', 'https://www.jarir.com', 24, '2028-01-10', 'ضمان الموزع المعتمد', 'سجلنا الضمان سنتين عبر موقع دايسون الرسمي.'),
         ('ماكينة إسبيرسو بريفيل باريستا تاتش', 'أدوات المطبخ', 'Breville', 'BES880BSS', 'BV-EXP-44021', '2024-05-20', 3750, 'ر.س', 'مأمون', 'ساكو (SACO)', '+966 9200 00888', 'طريق الملك فهد', 'https://www.saco.htm', 12, '2025-05-20', 'ضمان متجر ساكو الممتد', 'ماكينة القهوة الرئيسية للمنزل. تم تغيير فلتر الماء في مارس.'),
         ('آيباد برو 12.9 بوصة M2', 'تقنية وشخصية', 'Apple', 'MNXR3LL/A', 'DLXKZ001M2', '2026-03-01', 4120, 'ر.س', 'هالة', 'حاسبات العرب (أبل حاسبات)', '+966 9200 00445', 'مول الريدسي', 'https://www.arabcalculators.com', 24, '2028-03-01', 'AppleCare+ حماية شاملة', 'مشمول بحماية أبل كير بلس ضد الحوادث والأعطال.')
-      `;
+      `);
     }
 
     // Seed Bills if empty
-    const billsCount = await sql`SELECT COUNT(*)::int as count FROM bills`;
+    const billsCount = await runNeonQuery(url, `SELECT COUNT(*)::int as count FROM bills`);
     if (billsCount[0]?.count === 0) {
-      await sql`
+      await runNeonQuery(url, `
         INSERT INTO bills (title, category, amount, currency, due_day, status, assigned_to, notes)
         VALUES
         ('فاتورة الكهرباء الشهرية', 'electricity', 350, 'ر.س', 25, 'unpaid', 'أبو القاسم', 'تسدد عبر تطبيق الراجحي / سداد'),
         ('اشتراك إنترنت ألياف بصرية STC', 'wifi', 287.5, 'ر.س', 1, 'paid', 'أبو القاسم', 'باقة 300 ميجا للمنزل'),
         ('تأمين العربية السنوي', 'car_insurance', 1200, 'ر.س', 15, 'due_soon', 'مأمون', 'تأمين شامل عبر منصة بي Fort'),
         ('قسط العربية الشهري', 'car_payment', 1450, 'ر.س', 10, 'unpaid', 'مأمون', 'استقطاب شهري تلقائي')
-      `;
+      `);
     }
 
     // Seed Water Rotation if empty
-    const waterCount = await sql`SELECT COUNT(*)::int as count FROM water_rotation`;
+    const waterCount = await runNeonQuery(url, `SELECT COUNT(*)::int as count FROM water_rotation`);
     if (waterCount[0]?.count === 0) {
-      await sql`
+      await runNeonQuery(url, `
         INSERT INTO water_rotation (building_name, total_turns_per_cycle, current_turn_count, is_our_turn, assigned_to, notes)
         VALUES ('فاتورة ماء العمارة', 4, 2, 1, 'مأمون', 'نظام العمارة: كل شقة تدفع 4 مرات متتالية ثم تنتقل الدورة للشقة التالية. المسجل الحالي: مأمون.')
-      `;
+      `);
     }
 
     // Seed Rent Payments if empty
-    const rentCount = await sql`SELECT COUNT(*)::int as count FROM rent_payments`;
+    const rentCount = await runNeonQuery(url, `SELECT COUNT(*)::int as count FROM rent_payments`);
     if (rentCount[0]?.count === 0) {
-      await sql`
+      await runNeonQuery(url, `
         INSERT INTO rent_payments (title, due_month, due_date, amount, currency, status, notes)
         VALUES
         ('دفعة إيجار النصف الأول (يونيو)', 'june', '2026-06-01', 10000, 'ر.س', 'unpaid', 'مبلغ 10,000 ريال يحول لحساب مالك العقار في شهر يونيو'),
         ('دفعة إيجار النصف الثاني (ديسمبر)', 'december', '2026-12-01', 10000, 'ر.س', 'unpaid', 'مبلغ 10,000 ريال يحول لحساب مالك العقار في شهر ديسمبر')
-      `;
+      `);
     }
 
     // Seed Maintenance if empty
-    const maintCount = await sql`SELECT COUNT(*)::int as count FROM maintenance`;
+    const maintCount = await runNeonQuery(url, `SELECT COUNT(*)::int as count FROM maintenance`);
     if (maintCount[0]?.count === 0) {
-      await sql`
+      await runNeonQuery(url, `
         INSERT INTO maintenance (title, category, item_name, frequency_months, last_service_date, next_service_date, cost, currency, assigned_to, notes)
         VALUES
         ('تغيير زيت وفلتر المحرك للعربية', 'car', 'تويوتا كامري 2024', 6, '2026-04-10', '2026-10-10', 250, 'ر.س', 'مأمون', 'زيت تخليقي بالكامل 10,000 كم لدى مركز بترومين.'),
         ('غسيل وتنظيف فلاتر المكيفات المنزلية', 'home', 'مكيفات الشقة', 3, '2026-07-01', '2026-10-01', 180, 'ر.س', 'أبو القاسم', 'تنظيف وغسيل فلاتر المكيفات قبل الموسم.'),
         ('إزالة الترسبات وتغيير فلتر ماكينة القهوة', 'appliance', 'Breville Barista Espresso', 4, '2026-05-15', '2026-09-15', 75, 'ر.س', 'مأمون', 'تنظيف الدورة الداخلية بالمسحوق الخاص وتغيير الفلتر.')
-      `;
+      `);
     }
   } catch (err) {
     neonInitDone = false;
     console.error('Error initializing Neon DB:', err);
+    throw err;
   }
 }
 
@@ -219,10 +235,8 @@ export async function query<T = any>(sqlStr: string, params: any[] = []): Promis
   const url = getDbUrl();
   if (url) {
     await initNeonDb();
-    const sql = neon(url) as any;
     const pgSql = convertPlaceholders(sqlStr);
-    const cleanParams = sanitizeParams(params);
-    const rows = await sql(pgSql, cleanParams);
+    const rows = await runNeonQuery(url, pgSql, params);
     return rows as T[];
   } else {
     const db = getSqliteDb();
@@ -239,16 +253,14 @@ export async function execute(sqlStr: string, params: any[] = []): Promise<{ las
   const url = getDbUrl();
   if (url) {
     await initNeonDb();
-    const sql = neon(url) as any;
     let pgSql = convertPlaceholders(sqlStr);
-    const cleanParams = sanitizeParams(params);
 
     const isInsert = pgSql.trim().toUpperCase().startsWith('INSERT');
     if (isInsert && !pgSql.toUpperCase().includes('RETURNING')) {
       pgSql += ' RETURNING id';
     }
 
-    const rows = await sql(pgSql, cleanParams);
+    const rows = await runNeonQuery(url, pgSql, params);
     const lastId = rows && rows[0] && rows[0].id ? rows[0].id : undefined;
     return { lastInsertRowid: lastId, changes: rows ? rows.length : 1 };
   } else {
