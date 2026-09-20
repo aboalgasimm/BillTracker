@@ -36,20 +36,36 @@ export default function RentSection({ rentPayments, onUpdateRent }: RentSectionP
 
     setLoadingId(rentId);
     try {
-      const uploadData = new FormData();
-      uploadData.append('file', file);
+      let receiptUrl = '';
+      try {
+        const uploadData = new FormData();
+        uploadData.append('file', file);
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: uploadData
-      });
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadData
+        });
 
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) receiptUrl = data.url;
+        }
+      } catch (err) {
+        console.warn('API upload fallback to FileReader:', err);
+      }
+
+      if (!receiptUrl) {
+        receiptUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
 
       await onUpdateRent({
         id: rentId,
-        receipt_url: data.url
+        receipt_url: receiptUrl
       });
     } catch (error) {
       alert('فشل رفع إيصال التحويل');

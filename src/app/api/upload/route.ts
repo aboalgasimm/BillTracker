@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import path from 'path';
-import fs from 'fs';
 
 export async function POST(request: Request) {
   try {
@@ -8,28 +6,19 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+      return NextResponse.json({ error: 'لم يتم اختيار ملف' }, { status: 400 });
     }
 
+    // Convert file to Base64 Data URL (bypasses read-only serverless disk restrictions on Netlify)
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const mimeType = file.type || 'image/jpeg';
+    const base64String = buffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64String}`;
 
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    // Generate safe unique filename
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filename = `${Date.now()}-${safeName}`;
-    const filePath = path.join(uploadsDir, filename);
-
-    await fs.promises.writeFile(filePath, buffer);
-
-    const fileUrl = `/uploads/${filename}`;
-    return NextResponse.json({ url: fileUrl });
-  } catch (error) {
+    return NextResponse.json({ url: dataUrl });
+  } catch (error: any) {
     console.error('File upload error:', error);
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'فشل رفع الملف' }, { status: 500 });
   }
 }

@@ -133,20 +133,31 @@ export default function ItemFormModal({
 
     setUploading(true);
     try {
+      // Instant Client-side FileReader Base64 conversion (100% reliable on mobile cameras)
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setFormData((prev) => ({ ...prev, receipt_url: event.target!.result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+
+      // Server-side upload attempt
       const uploadData = new FormData();
       uploadData.append('file', file);
-
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: uploadData
       });
 
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-
-      setFormData((prev) => ({ ...prev, receipt_url: data.url }));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setFormData((prev) => ({ ...prev, receipt_url: data.url }));
+        }
+      }
     } catch (error) {
-      alert('فشل رفع ملف الفاتورة');
+      console.error('File upload notice:', error);
     } finally {
       setUploading(false);
     }
