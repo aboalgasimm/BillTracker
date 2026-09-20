@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { queryOne, execute } from '@/lib/db';
 import { Item, WarrantyStatus } from '@/types';
 
 function computeWarrantyStatus(expirationDateStr: string): { status: WarrantyStatus; days_remaining: number } {
@@ -25,8 +25,7 @@ function computeWarrantyStatus(expirationDateStr: string): { status: WarrantySta
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
     const params = await props.params;
-    const db = getDb();
-    const item = db.prepare('SELECT * FROM items WHERE id = ?').get(params.id) as Item | undefined;
+    const item = await queryOne<Item>('SELECT * FROM items WHERE id = ?', [params.id]);
 
     if (!item) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
@@ -52,7 +51,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       serial_number,
       purchase_date,
       price = 0,
-      currency = '$',
+      currency = 'ر.س',
       purchased_by,
       store_name,
       store_phone,
@@ -60,13 +59,12 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       store_website,
       warranty_duration_months = 12,
       warranty_expiration,
-      warranty_type = 'Manufacturer Warranty',
+      warranty_type = 'ضمان الشركة المصنعة',
       notes,
       receipt_url
     } = body;
 
-    const db = getDb();
-    const existing = db.prepare('SELECT * FROM items WHERE id = ?').get(params.id);
+    const existing = await queryOne<Item>('SELECT * FROM items WHERE id = ?', [params.id]);
     if (!existing) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
@@ -78,7 +76,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       finalExpiration = pDate.toISOString().split('T')[0];
     }
 
-    const stmt = db.prepare(`
+    await execute(
+      `
       UPDATE items SET
         name = ?,
         category = ?,
@@ -99,33 +98,36 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         notes = ?,
         receipt_url = ?
       WHERE id = ?
-    `);
-
-    stmt.run(
-      name,
-      category,
-      brand || null,
-      model || null,
-      serial_number || null,
-      purchase_date,
-      Number(price),
-      currency,
-      purchased_by,
-      store_name,
-      store_phone || null,
-      store_location || null,
-      store_website || null,
-      Number(warranty_duration_months),
-      finalExpiration,
-      warranty_type,
-      notes || null,
-      receipt_url || null,
-      params.id
+    `,
+      [
+        name,
+        category,
+        brand || null,
+        model || null,
+        serial_number || null,
+        purchase_date,
+        Number(price),
+        currency,
+        purchased_by,
+        store_name,
+        store_phone || null,
+        store_location || null,
+        store_website || null,
+        Number(warranty_duration_months),
+        finalExpiration,
+        warranty_type,
+        notes || null,
+        receipt_url || null,
+        params.id
+      ]
     );
 
-    const updatedItem = db.prepare('SELECT * FROM items WHERE id = ?').get(params.id) as Item;
-    const { status, days_remaining } = computeWarrantyStatus(updatedItem.warranty_expiration);
+    const updatedItem = await queryOne<Item>('SELECT * FROM items WHERE id = ?', [params.id]);
+    if (!updatedItem) {
+      return NextResponse.json({ error: 'Failed to retrieve updated item' }, { status: 500 });
+    }
 
+    const { status, days_remaining } = computeWarrantyStatus(updatedItem.warranty_expiration);
     return NextResponse.json({ ...updatedItem, status, days_remaining });
   } catch (error) {
     console.error('Error updating item:', error);
@@ -136,8 +138,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
     const params = await props.params;
-    const db = getDb();
-    const result = db.prepare('DELETE FROM items WHERE id = ?').run(params.id);
+    const result = await execute('DELETE FROM items WHERE id = ?', [params.id]);
 
     if (result.changes === 0) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });

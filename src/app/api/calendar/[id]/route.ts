@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { queryOne } from '@/lib/db';
 import { Item } from '@/types';
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
     const params = await props.params;
-    const db = getDb();
-    const item = db.prepare('SELECT * FROM items WHERE id = ?').get(params.id) as Item | undefined;
+    const item = await queryOne<Item>('SELECT * FROM items WHERE id = ?', [params.id]);
 
     if (!item) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });

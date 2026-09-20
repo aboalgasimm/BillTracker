@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { query, queryOne, execute } from '@/lib/db';
 import { Bill } from '@/types';
 
 export async function GET() {
   try {
-    const db = getDb();
-    const bills = db.prepare('SELECT * FROM bills ORDER BY due_day ASC').all() as Bill[];
+    const bills = await query<Bill>('SELECT * FROM bills ORDER BY due_day ASC');
     return NextResponse.json(bills);
   } catch (error) {
     console.error('Error fetching bills:', error);
@@ -22,15 +21,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const db = getDb();
-    const stmt = db.prepare(`
+    const result = await execute(
+      `
       INSERT INTO bills (title, category, amount, currency, due_day, status, assigned_to, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    `,
+      [title, category, Number(amount), currency, Number(due_day), status, assigned_to, notes || null]
+    );
 
-    const result = stmt.run(title, category, Number(amount), currency, Number(due_day), status, assigned_to, notes || null);
-    const newBill = db.prepare('SELECT * FROM bills WHERE id = ?').get(result.lastInsertRowid) as Bill;
-
+    const newBill = await queryOne<Bill>('SELECT * FROM bills WHERE id = ?', [result.lastInsertRowid]);
     return NextResponse.json(newBill, { status: 201 });
   } catch (error) {
     console.error('Error creating bill:', error);
@@ -47,8 +46,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Missing bill id' }, { status: 400 });
     }
 
-    const db = getDb();
-    const stmt = db.prepare(`
+    await execute(
+      `
       UPDATE bills SET
         title = COALESCE(?, title),
         category = COALESCE(?, category),
@@ -59,11 +58,11 @@ export async function PUT(request: Request) {
         notes = COALESCE(?, notes),
         last_paid_date = COALESCE(?, last_paid_date)
       WHERE id = ?
-    `);
+    `,
+      [title, category, amount, due_day, status, assigned_to, notes, last_paid_date, id]
+    );
 
-    stmt.run(title, category, amount, due_day, status, assigned_to, notes, last_paid_date, id);
-    const updated = db.prepare('SELECT * FROM bills WHERE id = ?').get(id) as Bill;
-
+    const updated = await queryOne<Bill>('SELECT * FROM bills WHERE id = ?', [id]);
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Error updating bill:', error);

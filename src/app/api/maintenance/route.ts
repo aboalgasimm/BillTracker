@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { query, queryOne, execute } from '@/lib/db';
 import { MaintenanceTask, MaintenanceStatus } from '@/types';
 
 function computeMaintenanceStatus(nextServiceDateStr: string): { status: MaintenanceStatus; days_remaining: number } {
@@ -24,8 +24,7 @@ function computeMaintenanceStatus(nextServiceDateStr: string): { status: Mainten
 
 export async function GET() {
   try {
-    const db = getDb();
-    const rows = db.prepare('SELECT * FROM maintenance ORDER BY next_service_date ASC').all() as MaintenanceTask[];
+    const rows = await query<MaintenanceTask>('SELECT * FROM maintenance ORDER BY next_service_date ASC');
 
     const processed: MaintenanceTask[] = rows.map((task) => {
       const { status, days_remaining } = computeMaintenanceStatus(task.next_service_date);
@@ -62,35 +61,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Auto calculate next service date
     const lDate = new Date(last_service_date);
     lDate.setMonth(lDate.getMonth() + Number(frequency_months));
     const next_service_date = lDate.toISOString().split('T')[0];
 
-    const db = getDb();
-    const stmt = db.prepare(`
+    const result = await execute(
+      `
       INSERT INTO maintenance (
         title, category, item_name, frequency_months, last_service_date, next_service_date,
         cost, currency, assigned_to, notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = stmt.run(
-      title,
-      category,
-      item_name || null,
-      Number(frequency_months),
-      last_service_date,
-      next_service_date,
-      Number(cost),
-      currency,
-      assigned_to,
-      notes || null
+    `,
+      [
+        title,
+        category,
+        item_name || null,
+        Number(frequency_months),
+        last_service_date,
+        next_service_date,
+        Number(cost),
+        currency,
+        assigned_to,
+        notes || null
+      ]
     );
 
-    const newTask = db.prepare('SELECT * FROM maintenance WHERE id = ?').get(result.lastInsertRowid) as MaintenanceTask;
-    const { status, days_remaining } = computeMaintenanceStatus(newTask.next_service_date);
+    const newTask = await queryOne<MaintenanceTask>('SELECT * FROM maintenance WHERE id = ?', [result.lastInsertRowid]);
+    if (!newTask) {
+      return NextResponse.json({ error: 'Failed to retrieve inserted task' }, { status: 500 });
+    }
 
+    const { status, days_remaining } = computeMaintenanceStatus(newTask.next_service_date);
     return NextResponse.json({ ...newTask, status, days_remaining }, { status: 201 });
   } catch (error) {
     console.error('Error creating maintenance:', error);
@@ -107,8 +108,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Missing task id' }, { status: 400 });
     }
 
-    const db = getDb();
-    const existing = db.prepare('SELECT * FROM maintenance WHERE id = ?').get(id) as MaintenanceTask;
+    const existing = await queryOne<MaintenanceTask>('SELECT * FROM maintenance WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
@@ -116,7 +116,6 @@ export async function PUT(request: Request) {
     let newLastDate = last_service_date || existing.last_service_date;
     let newFreq = frequency_months !== undefined ? Number(frequency_months) : existing.frequency_months;
 
-    // If user clicked "Complete Service Today"
     if (action === 'complete_service') {
       newLastDate = new Date().toISOString().split('T')[0];
     }
@@ -125,7 +124,8 @@ export async function PUT(request: Request) {
     lDate.setMonth(lDate.getMonth() + Number(newFreq));
     const next_service_date = lDate.toISOString().split('T')[0];
 
-    const stmt = db.prepare(`
+    await execute(
+      `
       UPDATE maintenance SET
         title = COALESCE(?, title),
         category = COALESCE(?, category),
@@ -137,12 +137,16 @@ export async function PUT(request: Request) {
         assigned_to = COALESCE(?, assigned_to),
         notes = COALESCE(?, notes)
       WHERE id = ?
-    `);
+    `,
+      [title, category, item_name, newFreq, newLastDate, next_service_date, cost, assigned_to, notes, id]
+    );
 
-    stmt.run(title, category, item_name, newFreq, newLastDate, next_service_date, cost, assigned_to, notes, id);
-    const updated = db.prepare('SELECT * FROM maintenance WHERE id = ?').get(id) as MaintenanceTask;
+    const updated = await queryOne<MaintenanceTask>('SELECT * FROM maintenance WHERE id = ?', [id]);
+    if (!updated) {
+      return NextResponse.json({ error: 'Failed to retrieve updated task' }, { status: 500 });
+    }
+
     const { status, days_remaining } = computeMaintenanceStatus(updated.next_service_date);
-
     return NextResponse.json({ ...updated, status, days_remaining });
   } catch (error) {
     console.error('Error updating maintenance:', error);

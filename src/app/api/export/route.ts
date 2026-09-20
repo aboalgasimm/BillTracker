@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { query } from '@/lib/db';
 import { Item } from '@/types';
 
 export async function GET(request: Request) {
@@ -7,8 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'csv';
 
-    const db = getDb();
-    const items = db.prepare('SELECT * FROM items ORDER BY id ASC').all() as Item[];
+    const items = await query<Item>('SELECT * FROM items ORDER BY id ASC');
 
     if (format === 'json') {
       return new NextResponse(JSON.stringify(items, null, 2), {
@@ -19,7 +18,6 @@ export async function GET(request: Request) {
       });
     }
 
-    // Default CSV format
     const headers = [
       'ID',
       'Item Name',
