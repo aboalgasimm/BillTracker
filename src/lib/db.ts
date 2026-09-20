@@ -5,7 +5,7 @@ import fs from 'fs';
 let sqliteDb: any = null;
 let neonInitDone = false;
 
-function getDbUrl(): string | undefined {
+export function getDbUrl(): string | undefined {
   return (
     process.env.DATABASE_URL ||
     process.env.NETLIFY_DATABASE_URL ||
@@ -14,13 +14,14 @@ function getDbUrl(): string | undefined {
   );
 }
 
-function isNeon(): boolean {
-  return !!getDbUrl();
-}
+const isServerless = typeof process !== 'undefined' && (process.env.NETLIFY === 'true' || process.env.VERCEL === '1' || !!process.env.AWS_LAMBDA_FUNCTION_NAME);
 
 function getSqliteDb(): any {
+  if (isServerless && !getDbUrl()) {
+    throw new Error('DATABASE_URL is missing in Netlify environment variables. Please add DATABASE_URL in Netlify and click "Trigger deploy".');
+  }
+
   if (!sqliteDb) {
-    // Dynamically require better-sqlite3 so it never loads on serverless platforms like Netlify
     const Database = require('better-sqlite3');
     const dataDir = path.join(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
@@ -34,7 +35,6 @@ function getSqliteDb(): any {
   return sqliteDb;
 }
 
-// Convert SQLite '?' parameter placeholders to Postgres '$1', '$2'...
 function convertPlaceholders(sql: string): string {
   let paramIndex = 1;
   return sql.replace(/\?/g, () => `$${paramIndex++}`);
@@ -52,16 +52,15 @@ export async function initNeonDb() {
   try {
     const sql = neon(url) as any;
 
-    await sql`
+    // Single multi-statement query for ultra-fast single round-trip schema initialization
+    await sql(`
       CREATE TABLE IF NOT EXISTS family_members (
         id SERIAL PRIMARY KEY,
         name TEXT UNIQUE NOT NULL,
         avatar_color TEXT DEFAULT '#2563EB',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
 
-    await sql`
       CREATE TABLE IF NOT EXISTS items (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
@@ -84,9 +83,7 @@ export async function initNeonDb() {
         receipt_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
 
-    await sql`
       CREATE TABLE IF NOT EXISTS bills (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -100,9 +97,7 @@ export async function initNeonDb() {
         last_paid_date TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
 
-    await sql`
       CREATE TABLE IF NOT EXISTS water_rotation (
         id SERIAL PRIMARY KEY,
         building_name TEXT DEFAULT 'ماء العمارة',
@@ -113,9 +108,7 @@ export async function initNeonDb() {
         last_payment_date TEXT,
         notes TEXT
       );
-    `;
 
-    await sql`
       CREATE TABLE IF NOT EXISTS rent_payments (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -128,9 +121,7 @@ export async function initNeonDb() {
         receipt_url TEXT,
         notes TEXT
       );
-    `;
 
-    await sql`
       CREATE TABLE IF NOT EXISTS maintenance (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -145,7 +136,7 @@ export async function initNeonDb() {
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
+    `);
 
     // Seed Family Members if empty
     const membersCount = await sql`SELECT COUNT(*)::int as count FROM family_members`;
@@ -259,7 +250,6 @@ export async function execute(sqlStr: string, params: any[] = []): Promise<{ las
   }
 }
 
-// Keep getDb helper for sqlite fallback compatibility
 export function getDb(): any {
   return getSqliteDb();
 }
@@ -272,9 +262,7 @@ function initSqliteTables(db: any) {
       avatar_color TEXT DEFAULT '#2563EB',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-  `);
 
-  db.exec(`
     CREATE TABLE IF NOT EXISTS items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -297,9 +285,7 @@ function initSqliteTables(db: any) {
       receipt_url TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-  `);
 
-  db.exec(`
     CREATE TABLE IF NOT EXISTS bills (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -313,9 +299,7 @@ function initSqliteTables(db: any) {
       last_paid_date TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-  `);
 
-  db.exec(`
     CREATE TABLE IF NOT EXISTS water_rotation (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       building_name TEXT DEFAULT 'ماء العمارة',
@@ -326,9 +310,7 @@ function initSqliteTables(db: any) {
       last_payment_date TEXT,
       notes TEXT
     );
-  `);
 
-  db.exec(`
     CREATE TABLE IF NOT EXISTS rent_payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -341,9 +323,7 @@ function initSqliteTables(db: any) {
       receipt_url TEXT,
       notes TEXT
     );
-  `);
 
-  db.exec(`
     CREATE TABLE IF NOT EXISTS maintenance (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
