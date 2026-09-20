@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Package, DollarSign, ShieldCheck, AlertTriangle, CreditCard, ArrowLeft } from 'lucide-react';
+import { Package, ShieldCheck, AlertTriangle, DollarSign } from 'lucide-react';
 import { StatsOverview } from '@/types';
 
 interface StatCardsProps {
@@ -16,135 +16,77 @@ export default function StatCards({ stats, activeStatusFilter, onFilterByStatus 
   };
 
   return (
-    <div className="mb-5">
-      
-      {/* 📱 MOBILE VIEW: Simple 2-Card Clean Dashboard */}
-      <div className="grid grid-cols-2 gap-2.5 md:hidden">
-        
-        {/* Mobile Card 1: Purchases & Warranties */}
-        <div
-          onClick={() => onFilterByStatus('')}
-          className={`bg-white border rounded-2xl p-3.5 flex flex-col justify-between cursor-pointer transition-all shadow-xs active:scale-[0.98] ${
-            activeStatusFilter === '' ? 'border-amber-800 ring-2 ring-amber-800/10' : 'border-[#EBE5DA]'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-stone-500">المشتريات</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center">
-              <Package className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-xl font-black text-stone-900">{stats.totalItems} <span className="text-xs font-semibold text-stone-500">منتج</span></div>
-          <div className="flex items-center justify-between text-[10px] font-bold text-emerald-700 mt-1">
-            <span>🟢 {stats.activeWarranties} ضمان ساري</span>
-          </div>
-        </div>
-
-        {/* Mobile Card 2: Monthly Commitments */}
-        <div
-          onClick={() => onFilterByStatus('bills')}
-          className="bg-white border border-[#EBE5DA] rounded-2xl p-3.5 flex flex-col justify-between cursor-pointer transition-all shadow-xs active:scale-[0.98]"
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-stone-500">التزامات الشهر</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center">
-              <CreditCard className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-xl font-black text-amber-900">
-            {formatCurrency(stats.totalMonthlyBills)} <span className="text-[10px] font-bold text-stone-600">ر.س</span>
-          </div>
-          <div className="flex items-center justify-between text-[10px] font-bold text-stone-600 mt-1">
-            <span className={stats.unpaidBillsCount > 0 ? 'text-rose-700 font-bold' : 'text-emerald-700 font-bold'}>
-              {stats.unpaidBillsCount > 0 ? `🔴 ${stats.unpaidBillsCount} مستحقة` : '🟢 مسدد بالكامل'}
-            </span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 🖥️ DESKTOP VIEW: Full 4-Card Grid */}
-      <div className="hidden md:grid grid-cols-4 gap-3.5">
+    <div className="bg-white border border-[#EBE5DA] rounded-2xl p-3 sm:p-4 mb-6 shadow-xs">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-stone-100">
         
         {/* 1. Total Items */}
         <div 
           onClick={() => onFilterByStatus('')}
-          className={`bg-white border rounded-2xl p-4 cursor-pointer transition-all hover:border-amber-500 shadow-xs ${
-            activeStatusFilter === '' ? 'border-amber-800 ring-2 ring-amber-800/10' : 'border-[#EBE5DA]'
+          className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all ${
+            activeStatusFilter === '' ? 'bg-amber-50/80 border border-amber-200' : 'hover:bg-stone-50'
           }`}
         >
-          <div className="flex items-center justify-between text-stone-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">إجمالي المشتريات</span>
-            <div className="p-1.5 bg-amber-50 text-amber-800 rounded-xl">
-              <Package className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0 border border-amber-100">
+            <Package className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] text-stone-500 font-semibold block">إجمالي المشتريات</span>
+            <div className="text-base font-black text-stone-900">
+              {stats.totalItems} <span className="text-[11px] font-bold text-stone-500">منتج</span>
             </div>
           </div>
-          <div className="text-2xl font-black text-stone-900">{stats.totalItems}</div>
-          <p className="text-[11px] text-stone-500 font-medium mt-1">منتج ومغطي بالضمان</p>
         </div>
 
         {/* 2. Total Asset Value */}
-        <div className="bg-white border border-[#EBE5DA] rounded-2xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-stone-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">قيمة الأصول والمشتريات</span>
-            <div className="p-1.5 bg-emerald-50 text-emerald-800 rounded-xl">
-              <DollarSign className="w-4 h-4" />
+        <div className="flex items-center gap-3 p-2.5 pt-3 lg:pt-2.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-100">
+            <DollarSign className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] text-stone-500 font-semibold block">قيمة الأصول المسجلة</span>
+            <div className="text-base font-black text-stone-900">
+              {formatCurrency(stats.totalValue)} <span className="text-[11px] font-bold text-stone-500">ر.س</span>
             </div>
           </div>
-          <div className="text-2xl font-black text-stone-900">
-            {formatCurrency(stats.totalValue)} <span className="text-xs font-bold text-stone-600">ريال</span>
-          </div>
-          <p className="text-[11px] text-stone-500 font-medium mt-1">القيمة التقديرية المسجلة</p>
         </div>
 
         {/* 3. Active Warranties */}
         <div 
           onClick={() => onFilterByStatus('active')}
-          className={`bg-white border rounded-2xl p-4 cursor-pointer transition-all hover:border-emerald-500 shadow-xs ${
-            activeStatusFilter === 'active' ? 'border-emerald-600 ring-2 ring-emerald-600/10' : 'border-[#EBE5DA]'
+          className={`flex items-center gap-3 p-2.5 pt-3 lg:pt-2.5 cursor-pointer transition-all ${
+            activeStatusFilter === 'active' ? 'bg-emerald-50/80 border border-emerald-200' : 'hover:bg-stone-50'
           }`}
         >
-          <div className="flex items-center justify-between text-stone-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">ضمانات سارية ومحمية</span>
-            <div className="p-1.5 bg-emerald-50 text-emerald-700 rounded-xl">
-              <ShieldCheck className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] text-stone-500 font-semibold block">ضمانات سارية</span>
+            <div className="text-base font-black text-emerald-700">
+              {stats.activeWarranties} <span className="text-[11px] font-bold text-emerald-600">ساري 🟢</span>
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-700">{stats.activeWarranties}</div>
-          <p className="text-[11px] text-emerald-800 font-bold mt-1">تغطية رسمية سارية 🟢</p>
         </div>
 
-        {/* 4. Expiring & Expired Warranties */}
+        {/* 4. Expiring Warranties */}
         <div 
           onClick={() => onFilterByStatus('expiring_soon')}
-          className={`bg-white border rounded-2xl p-4 cursor-pointer transition-all hover:border-amber-500 shadow-xs ${
-            activeStatusFilter === 'expiring_soon' || activeStatusFilter === 'expired'
-              ? 'border-amber-600 ring-2 ring-amber-600/20 bg-amber-50/20'
-              : 'border-[#EBE5DA]'
+          className={`flex items-center gap-3 p-2.5 pt-3 lg:pt-2.5 cursor-pointer transition-all ${
+            activeStatusFilter === 'expiring_soon' ? 'bg-amber-50/80 border border-amber-200' : 'hover:bg-stone-50'
           }`}
         >
-          <div className="flex items-center justify-between text-stone-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-900">تنبيهات الضمان</span>
-            <div className="p-1.5 bg-amber-100 text-amber-800 rounded-xl">
-              <AlertTriangle className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0 border border-amber-100">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] text-stone-500 font-semibold block">تنبيهات الانتهاء</span>
+            <div className="text-base font-black text-amber-900">
+              {stats.expiringSoonWarranties} <span className="text-[11px] font-bold text-stone-500">قريباً</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div>
-              <span className="text-2xl font-black text-amber-800">{stats.expiringSoonWarranties}</span>
-              <span className="text-[10px] font-bold text-amber-900 mr-1">قريباً</span>
-            </div>
-            <div className="h-6 w-px bg-stone-200" />
-            <div>
-              <span className="text-2xl font-black text-rose-700">{stats.expiredWarranties}</span>
-              <span className="text-[10px] font-bold text-rose-800 mr-1">منتهي</span>
-            </div>
-          </div>
-          <p className="text-[11px] text-amber-900 font-bold mt-1">اضغط للتصفية السريعة 🟠</p>
         </div>
 
       </div>
-
     </div>
   );
 }

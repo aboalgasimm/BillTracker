@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Home, Calendar, CheckCircle2, AlertCircle, Upload, Paperclip, Check } from 'lucide-react';
+import { Home, Calendar, CheckCircle2, Upload, Paperclip, Check, Clock } from 'lucide-react';
 import { RentPayment } from '@/types';
 
 interface RentSectionProps {
@@ -58,6 +58,48 @@ export default function RentSection({ rentPayments, onUpdateRent }: RentSectionP
     }
   };
 
+  // Compute countdown & status label without harsh red colors
+  const getRentDueBadge = (rent: RentPayment) => {
+    if (rent.status === 'paid') {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-full border border-emerald-200">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <span>تم سداد الإيجار 🟢</span>
+        </span>
+      );
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isJune = rent.due_month === 'june';
+    const targetMonthIndex = isJune ? 5 : 11; // 0-indexed: 5 = June, 11 = December
+    let targetYear = today.getFullYear();
+    
+    let targetDate = new Date(targetYear, targetMonthIndex, 1);
+    if (targetDate.getTime() < today.getTime()) {
+      targetDate = new Date(targetYear + 1, targetMonthIndex, 1);
+    }
+
+    const diffTime = targetDate.getTime() - today.getTime();
+    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const monthsRemaining = Math.floor(daysRemaining / 30);
+
+    const dateLabel = isJune ? '1 يونيو' : '1 ديسمبر';
+    let timeText = `المتبقي ${daysRemaining} يوم (${dateLabel})`;
+    if (monthsRemaining >= 1) {
+      const remainingDays = daysRemaining % 30;
+      timeText = `المتبقي ${monthsRemaining} أشهر ${remainingDays > 0 ? `و ${remainingDays} يوم` : ''} (${dateLabel})`;
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+        <Clock className="w-3.5 h-3.5 text-amber-700" />
+        <span>⏳ {timeText}</span>
+      </span>
+    );
+  };
+
   return (
     <div className="bg-white border border-[#EBE5DA] rounded-2xl p-5 shadow-sm mb-6">
       
@@ -95,23 +137,13 @@ export default function RentSection({ rentPayments, onUpdateRent }: RentSectionP
               }`}
             >
               <div>
-                {/* Top Badge */}
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-200">
+                {/* Top Badge: Remaining Time Countdown without red color */}
+                <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                  <span className="text-xs font-bold text-stone-800 bg-stone-100 px-2.5 py-0.5 rounded-lg border border-stone-200">
                     {isJune ? 'دفعة شهر يونيو (6)' : 'دفعة شهر ديسمبر (12)'}
                   </span>
                   
-                  {isPaid ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>تم سداد الإيجار 🟢</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-100/80 px-2.5 py-0.5 rounded-full">
-                      <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                      <span>مستحقة السداد 🔴</span>
-                    </span>
-                  )}
+                  {getRentDueBadge(rent)}
                 </div>
 
                 {/* Payment Title & Amount */}
@@ -122,7 +154,7 @@ export default function RentSection({ rentPayments, onUpdateRent }: RentSectionP
 
                 <div className="text-xs text-stone-600 space-y-1 bg-white p-3 rounded-xl border border-[#EBE5DA] mb-4">
                   <div className="flex justify-between">
-                    <span className="text-stone-500">موعد الاستحقاق:</span>
+                    <span className="text-stone-500">موعد الاستحقاق الرسمية:</span>
                     <span className="font-bold text-stone-800">{isJune ? '1 يونيو' : '1 ديسمبر'}</span>
                   </div>
                   {rent.paid_date && (
@@ -139,7 +171,7 @@ export default function RentSection({ rentPayments, onUpdateRent }: RentSectionP
                 <button
                   onClick={() => handleToggleStatus(rent)}
                   disabled={loadingId === rent.id}
-                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 ${
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                     isPaid
                       ? 'bg-stone-200 hover:bg-stone-300 text-stone-800'
                       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
