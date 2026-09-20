@@ -79,11 +79,11 @@ export default function Navbar({
   return (
     <header className="bg-white border-b border-[#EBE5DA] sticky top-0 z-30 shadow-xs">
       
-      {/* Row 1: Brand & Clean Controls */}
+      {/* Row 1: Brand, Search & Upper-Left Plus Button */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
         <div className="flex items-center justify-between gap-3">
           
-          {/* Brand Logo */}
+          {/* Brand Logo (Right side in RTL) */}
           <div className="flex items-center gap-2.5 cursor-pointer shrink-0" onClick={() => setActiveTab('items')}>
             <div className="w-9 h-9 rounded-xl bg-amber-800 flex items-center justify-center text-white shadow-xs">
               <Home className="w-4 h-4" />
@@ -94,7 +94,7 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Search Input */}
+          {/* Search Input (Middle) */}
           <div className="relative flex-1 max-w-md">
             <Search className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
@@ -174,20 +174,21 @@ export default function Navbar({
 
           </div>
 
-          {/* Primary Add Button (Always visible & clean) */}
+          {/* Upper Left Plus (+) Button - Main Action Trigger */}
           <button
             onClick={onOpenAddModal}
-            className="bg-amber-800 hover:bg-amber-900 text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs flex items-center gap-1 shadow-xs cursor-pointer shrink-0"
+            className="bg-amber-800 hover:bg-amber-900 text-white font-bold p-2 sm:px-4 sm:py-2 rounded-xl text-xs flex items-center justify-center gap-1 shadow-sm cursor-pointer shrink-0 transition-transform active:scale-95"
+            title="إضافة عنصر جديد"
           >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">إضافة شراء</span>
+            <Plus className="w-4.5 h-4.5" />
+            <span className="hidden sm:inline">إضافة جديد</span>
           </button>
 
         </div>
       </div>
 
-      {/* Row 2: Segmented Control Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 border-t border-[#F4EFE6]">
+      {/* Row 2: Desktop Tabs ONLY (Hidden on mobile to eliminate double navbars) */}
+      <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 border-t border-[#F4EFE6]">
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
           
           <button
