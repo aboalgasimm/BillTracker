@@ -133,7 +133,7 @@ export async function initNeonDb() {
     // Seed Family Members if empty
     const membersCount = await sql`SELECT COUNT(*)::int as count FROM family_members`;
     if (membersCount[0]?.count === 0) {
-      await sql`INSERT INTO family_members (name, avatar_color) VALUES ('أبو القاسم', '#2563EB'), ('يمنى', '#DB2777'), ('مأمون', '#059669'), ('هالة', '#7C3AED') ON CONFLICT DO NOTHING`;
+      await sql`INSERT INTO family_members (name, avatar_color) VALUES ('أبو القاسم', '#2563EB'), ('يمنى', '#DB2777'), ('مأمون', '#059669'), ('هالة', '#7C3AED') ON CONFLICT (name) DO NOTHING`;
     }
 
     // Seed Items if empty
@@ -194,6 +194,7 @@ export async function initNeonDb() {
       `;
     }
   } catch (err) {
+    neonInitDone = false;
     console.error('Error initializing Neon DB:', err);
   }
 }
