@@ -5,6 +5,7 @@ import { X, Phone, Calendar, CalendarPlus, ShieldCheck, AlertTriangle, ShieldX, 
 import { Item, FamilyMember } from '@/types';
 
 interface ItemDetailModalProps {
+  isOpen?: boolean;
   item: Item | null;
   familyMembers: FamilyMember[];
   onClose: () => void;
@@ -13,6 +14,7 @@ interface ItemDetailModalProps {
 }
 
 export default function ItemDetailModal({
+  isOpen = true,
   item,
   familyMembers,
   onClose,
@@ -24,13 +26,13 @@ export default function ItemDetailModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    if (item) {
+    if (isOpen && item) {
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [item, onClose]);
+  }, [isOpen, item, onClose]);
 
-  if (!item) return null;
+  if (!isOpen || !item) return null;
 
   const member = familyMembers.find((m) => m.name.toLowerCase() === item.purchased_by.toLowerCase());
   const memberColor = member?.avatar_color || '#2563EB';

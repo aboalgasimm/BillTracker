@@ -465,11 +465,16 @@ export default function Home() {
       />
 
       <ItemDetailModal
+        isOpen={isDetailModalOpen}
         item={selectedItem}
         familyMembers={familyMembers}
-        onClose={() => setIsDetailModalOpen(false)}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedItem(null);
+        }}
         onEdit={(itemToEdit) => {
           setIsDetailModalOpen(false);
+          setSelectedItem(null);
           setEditingItem(itemToEdit);
           setIsFormModalOpen(true);
         }}
