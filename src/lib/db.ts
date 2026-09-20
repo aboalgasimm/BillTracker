@@ -5,20 +5,29 @@ import fs from 'fs';
 let sqliteDb: any = null;
 let neonInitDone = false;
 
+const DEFAULT_NEON_URL = 'postgresql://neondb_owner:npg_Y8rv1xWcGgTe@ep-polished-snow-b5pfwlub-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require';
+
+const isServerless = typeof process !== 'undefined' && (process.env.NETLIFY === 'true' || process.env.VERCEL === '1' || !!process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === 'production');
+
 export function getDbUrl(): string | undefined {
-  return (
+  const envUrl = (
     process.env.DATABASE_URL ||
     process.env.NETLIFY_DATABASE_URL ||
     process.env.NEON_DATABASE_URL ||
     process.env.POSTGRES_URL
   );
-}
 
-const isServerless = typeof process !== 'undefined' && (process.env.NETLIFY === 'true' || process.env.VERCEL === '1' || !!process.env.AWS_LAMBDA_FUNCTION_NAME);
+  if (envUrl) return envUrl;
+  
+  // If running in production / serverless context, fallback to Neon connection string
+  if (isServerless) return DEFAULT_NEON_URL;
+
+  return undefined;
+}
 
 function getSqliteDb(): any {
   if (isServerless && !getDbUrl()) {
-    throw new Error('DATABASE_URL is missing in Netlify environment variables. Please add DATABASE_URL in Netlify and click "Trigger deploy".');
+    throw new Error('DATABASE_URL is missing in Netlify environment variables.');
   }
 
   if (!sqliteDb) {
@@ -52,7 +61,6 @@ export async function initNeonDb() {
   try {
     const sql = neon(url) as any;
 
-    // Single multi-statement query for ultra-fast single round-trip schema initialization
     await sql(`
       CREATE TABLE IF NOT EXISTS family_members (
         id SERIAL PRIMARY KEY,
