@@ -1,16 +1,27 @@
-import Database from 'better-sqlite3';
 import { neon } from '@neondatabase/serverless';
 import path from 'path';
 import fs from 'fs';
 
-// Check if running on Neon (Postgres) via DATABASE_URL environment variable
-const isNeon = !!process.env.DATABASE_URL;
-
-let sqliteDb: Database.Database | null = null;
+let sqliteDb: any = null;
 let neonInitDone = false;
 
-function getSqliteDb(): Database.Database {
+function getDbUrl(): string | undefined {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.NETLIFY_DATABASE_URL ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.POSTGRES_URL
+  );
+}
+
+function isNeon(): boolean {
+  return !!getDbUrl();
+}
+
+function getSqliteDb(): any {
   if (!sqliteDb) {
+    // Dynamically require better-sqlite3 so it never loads on serverless platforms like Netlify
+    const Database = require('better-sqlite3');
     const dataDir = path.join(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
@@ -29,12 +40,18 @@ function convertPlaceholders(sql: string): string {
   return sql.replace(/\?/g, () => `$${paramIndex++}`);
 }
 
+function sanitizeParams(params: any[]): any[] {
+  return params.map((p) => (p === undefined ? null : p));
+}
+
 export async function initNeonDb() {
-  if (!isNeon || neonInitDone) return;
+  const url = getDbUrl();
+  if (!url || neonInitDone) return;
   neonInitDone = true;
-  const sql = neon(process.env.DATABASE_URL!);
 
   try {
+    const sql = neon(url) as any;
+
     await sql`
       CREATE TABLE IF NOT EXISTS family_members (
         id SERIAL PRIMARY KEY,
@@ -200,11 +217,13 @@ export async function initNeonDb() {
 }
 
 export async function query<T = any>(sqlStr: string, params: any[] = []): Promise<T[]> {
-  if (isNeon) {
+  const url = getDbUrl();
+  if (url) {
     await initNeonDb();
-    const sql = neon(process.env.DATABASE_URL!) as any;
+    const sql = neon(url) as any;
     const pgSql = convertPlaceholders(sqlStr);
-    const rows = await sql(pgSql, params);
+    const cleanParams = sanitizeParams(params);
+    const rows = await sql(pgSql, cleanParams);
     return rows as T[];
   } else {
     const db = getSqliteDb();
@@ -213,30 +232,26 @@ export async function query<T = any>(sqlStr: string, params: any[] = []): Promis
 }
 
 export async function queryOne<T = any>(sqlStr: string, params: any[] = []): Promise<T | undefined> {
-  if (isNeon) {
-    const rows = await query<T>(sqlStr, params);
-    return rows[0];
-  } else {
-    const db = getSqliteDb();
-    return db.prepare(sqlStr).get(...params) as T | undefined;
-  }
+  const rows = await query<T>(sqlStr, params);
+  return rows[0];
 }
 
 export async function execute(sqlStr: string, params: any[] = []): Promise<{ lastInsertRowid?: number | string; changes?: number }> {
-  if (isNeon) {
+  const url = getDbUrl();
+  if (url) {
     await initNeonDb();
-    const sql = neon(process.env.DATABASE_URL!) as any;
+    const sql = neon(url) as any;
     let pgSql = convertPlaceholders(sqlStr);
-    
-    // Add RETURNING id for INSERT queries if not present
+    const cleanParams = sanitizeParams(params);
+
     const isInsert = pgSql.trim().toUpperCase().startsWith('INSERT');
     if (isInsert && !pgSql.toUpperCase().includes('RETURNING')) {
       pgSql += ' RETURNING id';
     }
 
-    const rows = await sql(pgSql, params);
+    const rows = await sql(pgSql, cleanParams);
     const lastId = rows && rows[0] && rows[0].id ? rows[0].id : undefined;
-    return { lastInsertRowid: lastId, changes: rows.length };
+    return { lastInsertRowid: lastId, changes: rows ? rows.length : 1 };
   } else {
     const db = getSqliteDb();
     const info = db.prepare(sqlStr).run(...params);
@@ -245,11 +260,11 @@ export async function execute(sqlStr: string, params: any[] = []): Promise<{ las
 }
 
 // Keep getDb helper for sqlite fallback compatibility
-export function getDb(): Database.Database {
+export function getDb(): any {
   return getSqliteDb();
 }
 
-function initSqliteTables(db: Database.Database) {
+function initSqliteTables(db: any) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS family_members (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
