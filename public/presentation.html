@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عرض بيت العائلة 🏠 - HomeVault</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: #FDFBF7;
+      color: #1C1917;
+    }
+    .slide {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px) scale(0.99);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .amber-gradient {
+      background: linear-gradient(135deg, #78350F 0%, #92400E 100%);
+    }
+    .card-shadow {
+      box-shadow: 0 10px 30px -5px rgba(120, 53, 15, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-hidden select-none bg-[#FDFBF7]">
+
+  <!-- Top Navigation Header -->
+  <header class="w-full px-6 py-4 flex items-center justify-between border-b border-[#EBE5DA] bg-white/80 backdrop-blur-md z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 font-extrabold text-xl shadow-xs">
+        🏠
+      </div>
+      <div>
+        <h1 class="text-base font-extrabold text-stone-900 tracking-tight">بيت العائلة <span class="text-xs font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">HomeVault</span></h1>
+        <p class="text-[11px] text-stone-500 font-medium">العرض التقديمي التعريفي للعائلة</p>
+      </div>
+    </div>
+
+    <!-- Progress Indicator & Controls -->
+    <div class="flex items-center gap-4">
+      <div class="hidden sm:flex items-center gap-2 bg-stone-100 px-3 py-1.5 rounded-full border border-stone-200 text-xs font-bold text-stone-700">
+        <span id="currentSlideNum" class="text-amber-900 font-extrabold">1</span>
+        <span class="text-stone-400">/</span>
+        <span id="totalSlidesNum">10</span>
+      </div>
+      <button id="fullscreenBtn" onclick="toggleFullscreen()" title="ملء الشاشة" class="p-2 text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 rounded-xl transition-all cursor-pointer">
+        <i data-lucide="maximize" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress Bar Line -->
+  <div class="w-full h-1 bg-stone-200 z-30">
+    <div id="progressBar" class="h-full bg-amber-800 transition-all duration-300 w-[10%]"></div>
+  </div>
+
+  <!-- Slides Container -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 flex items-center justify-center z-10">
+
+    <!-- Slide 1: Welcome -->
+    <div class="slide active flex-col items-center text-center max-w-3xl space-y-6">
+      <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-900 px-4 py-1.5 rounded-full text-xs font-extrabold border border-amber-300 shadow-xs">
+        <span>✨ منصتكم العائلية الجديدة</span>
+      </div>
+      <h2 class="text-3xl sm:text-5xl font-black text-stone-900 leading-tight">
+        أهلاً بكم في منظومة <br/><span class="text-amber-900">"بيت العائلة 🏠"</span>
+      </h2>
+      <p class="text-base sm:text-lg text-stone-600 font-medium leading-relaxed max-w-2xl">
+        منصة إلكترونية عائلية موحدة وذكية لإدارة مصاريف المنزل، وثائق الضمانات، الفواتير الشهريّة، جدول وايت الماء، وسداد الإيجار وسجل صيانة السيارات بشفافية وسهولة مطلقة.
+      </p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pt-4">
+        <div class="bg-white p-4 rounded-2xl border border-[#EBE5DA] card-shadow text-center">
+          <div class="text-amber-800 text-2xl mb-1">📦</div>
+          <div class="text-xs font-bold text-stone-800">حفظ الضمانات</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-[#EBE5DA] card-shadow text-center">
+          <div class="text-amber-800 text-2xl mb-1">💡</div>
+          <div class="text-xs font-bold text-stone-800">متابعة الفواتير</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-[#EBE5DA] card-shadow text-center">
+          <div class="text-amber-800 text-2xl mb-1">💧</div>
+          <div class="text-xs font-bold text-stone-800">أدوار وايت الماء</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-[#EBE5DA] card-shadow text-center">
+          <div class="text-amber-800 text-2xl mb-1">🚗</div>
+          <div class="text-xs font-bold text-stone-800">صيانة عربية العائلة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: The Goal -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">الرؤية والهدف</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">لماذا أنشأنا هذه المنظومة؟</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full pt-2">
+        <div class="bg-white p-5 rounded-2xl border border-[#EBE5DA] card-shadow space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-900">
+            <i data-lucide="archive" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-base font-bold text-stone-900">ضياع الفواتير والضمانات</h3>
+          <p class="text-xs text-stone-600 leading-relaxed">عدم ضياع أي فاتورة شراء أو كارت ضمان، وحفظ صورها الرقمية في مكان آمن متاح للجميع.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-[#EBE5DA] card-shadow space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800">
+            <i data-lucide="scale" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-base font-bold text-stone-900">الشفافية والعدالة</h3>
+          <p class="text-xs text-stone-600 leading-relaxed">توزيع الدفعات والوايتات بين أفراد العائلة بوضوح التواريخ وبشكل عادل يريح الجميع.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-[#EBE5DA] card-shadow space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-900">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-base font-bold text-stone-900">التنبيهات الاستباقية</h3>
+          <p class="text-xs text-stone-600 leading-relaxed">تنبيه مستمر بانتهاء الضمانات، فحص السيارة الدوري، ومواعيد سداد الإيجارات قبل حلولها.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Items & Warranties -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">سجل الأجهزة والضمانات</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">📦 حماية وتوثيق كل مشتريات المنزل</h2>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-[#EBE5DA] card-shadow w-full space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="p-4 rounded-2xl bg-[#FDFBF7] border border-[#EBE5DA] space-y-2">
+            <div class="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+              <i data-lucide="camera" class="w-4 h-4"></i>
+              <span>تصوير الفاتورة بالكاميرا</span>
+            </div>
+            <p class="text-xs text-stone-600 leading-relaxed">إمكانية فتح كاميرا الجوال مباشرة وحفظ صورة الفاتورة فوراً بدون ضياع الورق.</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-[#FDFBF7] border border-[#EBE5DA] space-y-2">
+            <div class="flex items-center gap-2 text-amber-800 font-bold text-sm">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span>تنبيهات حالة الضمان</span>
+            </div>
+            <p class="text-xs text-stone-600 leading-relaxed">تصنيف تلقائي ملون: ساري 🟢، ينتهي قريباً ⚠️، أو منتهي 🔴 مع عدد الأيام المتبقية.</p>
+          </div>
+        </div>
+
+        <!-- Sample Mock Warranty Card -->
+        <div class="bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80 flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-amber-100 text-amber-900 rounded-xl">
+              <i data-lucide="tv" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-extrabold text-stone-900">شاشة المعيشة OLED 65</h4>
+              <p class="text-xs text-stone-600 font-medium">سيريال: LG-9920381 • المتجر: إكسترا</p>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
+            الضمان ساري 🟢 (متبقي 420 يوم)
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: Bills & Utilities -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">الفواتير الشهريّة</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">💡 متابعة دقيقة ومستمرة للمصاريف</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+        <!-- Electric -->
+        <div class="bg-white p-5 rounded-2xl border border-[#EBE5DA] card-shadow space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-lg">كهرباء الشقق</span>
+            <i data-lucide="zap" class="w-5 h-5 text-amber-700"></i>
+          </div>
+          <h3 class="text-xl font-bold text-stone-900">غير ثابتة (حسب الاستهلاك)</h3>
+          <p class="text-xs text-stone-600 leading-relaxed">تسجيل قيمة الفاتورة الشهرية ومقارنتها بالشهور السابقة لضبط الاستهلاك.</p>
+        </div>
+
+        <!-- Wifi -->
+        <div class="bg-white p-5 rounded-2xl border border-[#EBE5DA] card-shadow space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-800 bg-blue-100 px-2.5 py-1 rounded-lg">الإنترنت والواي فاي</span>
+            <i data-lucide="wifi" class="w-5 h-5 text-blue-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-stone-900">ثابتة 287.5 ريال / شهرياً</h3>
+          <p class="text-xs text-stone-600 leading-relaxed">توضيح حالة السداد فور الدفع لتجنب انقطاع الخدمة.</p>
+        </div>
+      </div>
+
+      <div class="w-full bg-emerald-50 p-4 rounded-2xl border border-emerald-200 flex items-center gap-3">
+        <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-700 shrink-0"></i>
+        <p class="text-xs text-emerald-900 font-bold leading-relaxed">
+          جميع الفواتير تسجل بالحالة (تم السداد 🟢) أو (بانتظار السداد) لضمان معرفة الالتزامات قبل موعدها.
+        </p>
+      </div>
+    </div>
+
+    <!-- Slide 5: Water Rotation -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">الخدمات المشتركة</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">💧 نظام تناوب وايت الماء</h2>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-[#EBE5DA] card-shadow w-full space-y-5">
+        <div class="flex items-center justify-between bg-blue-50/70 p-4 rounded-2xl border border-blue-200">
+          <div>
+            <span class="text-[11px] font-bold text-blue-800 uppercase block">الدور الحالي على:</span>
+            <h3 class="text-lg font-extrabold text-stone-900">شقة أبو القاسم 👤</h3>
+          </div>
+          <div class="text-left">
+            <span class="text-xs font-bold text-blue-900 bg-blue-100 px-3 py-1.5 rounded-xl border border-blue-200">
+              تكلفة الوايت: 120 ريال
+            </span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold text-stone-700">آلية التناوب العادلة:</h4>
+          <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-stone-600 font-medium">
+            <li class="flex items-center gap-2 bg-[#FDFBF7] p-2.5 rounded-xl border border-[#EBE5DA]">
+              <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+              <span>دوران تلقائي للدور بعد كل عملية دفع.</span>
+            </li>
+            <li class="flex items-center gap-2 bg-[#FDFBF7] p-2.5 rounded-xl border border-[#EBE5DA]">
+              <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+              <span>سجل تاريخي كامل لجميع الوايتات السابقة.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 6: Rent -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">سداد الإيجار النصف سنوي</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">🏢 متابعة الدفعات بدون توتر</h2>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-[#EBE5DA] card-shadow w-full space-y-4 text-right">
+        <div class="p-4 rounded-2xl bg-[#FDFBF7] border border-[#EBE5DA] flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h4 class="text-sm font-bold text-stone-900">الدفعة النصف سنوية القادمة</h4>
+            <p class="text-xs text-stone-500">تاريخ الاستحقاق: 15 أكتوبر 2026</p>
+          </div>
+          <span class="text-xs font-bold text-amber-900 bg-amber-100 px-3.5 py-1.5 rounded-full border border-amber-300">
+            ⏳ الموعد المتبقي إلى السداد: 24 يوم
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="p-3.5 rounded-2xl bg-stone-50 border border-stone-200">
+            <span class="text-stone-500 font-bold block mb-1">رفع إيصال البنك</span>
+            <span class="text-stone-800 font-medium">حفظ صورة التحويل البنكي مباشرة مرجعية للعقار.</span>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-stone-50 border border-stone-200">
+            <span class="text-stone-500 font-bold block mb-1">عرض محايد مريح</span>
+            <span class="text-stone-800 font-medium">عرض العداد التنازلي بأسلوب راقي بدون ألوان حمراء مزعجة.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 7: Maintenance -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">صيانة عربية العائلة</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">🚗 سلامة السيارة وجاهزيتها دائماً</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+        <div class="bg-white p-4 rounded-2xl border border-[#EBE5DA] card-shadow space-y-2 text-center">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center mx-auto">
+            <i data-lucide="droplet" class="w-5 h-5"></i>
+          </div>
+          <h4 class="text-sm font-bold text-stone-900">تغيير الزيت والفلتر</h4>
+          <p class="text-xs text-stone-500">تتبع الكيلومترات والتاريخ</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-[#EBE5DA] card-shadow space-y-2 text-center">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center mx-auto">
+            <i data-lucide="disc" class="w-5 h-5"></i>
+          </div>
+          <h4 class="text-sm font-bold text-stone-900">فحمات وتواير السيارة</h4>
+          <p class="text-xs text-stone-500">تذكير باستبدال الفحمات والإطارات</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-[#EBE5DA] card-shadow space-y-2 text-center">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center mx-auto">
+            <i data-lucide="file-check" class="w-5 h-5"></i>
+          </div>
+          <h4 class="text-sm font-bold text-stone-900">الفحص الدوري والاستمارة</h4>
+          <p class="text-xs text-stone-500">التنبيه قبل تجديد الفحص الدوري</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 8: WhatsApp Sharing -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">التواصل السريع</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">📱 المشاركة المباشرة عبر الواتساب</h2>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-[#EBE5DA] card-shadow w-full space-y-4 text-center">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+          <i data-lucide="share-2" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-lg font-extrabold text-stone-900">إرسال التنبيهات والمعلومات بنقرة واحدة</h3>
+        <p class="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
+          يمكن لأي فرد في العائلة إرسال كارت الضمان، تفاصيل الصيانة، أو تذكير الدفع مباشرة إلى قروب العائلة على الواتساب دون الحاجة لكتابتها يدوياً.
+        </p>
+
+        <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl inline-flex items-center gap-2 text-xs font-bold text-emerald-900">
+          <span>📲 زر "مشاركة عبر الواتساب" مفعل في كل البطاقات</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 9: Budget & Analytics -->
+    <div class="slide flex-col items-center max-w-3xl space-y-6">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">التحليلات والميزانية</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-stone-900">📊 ملخص وتوزيع المصاريف</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+        <div class="bg-white p-5 rounded-2xl border border-[#EBE5DA] card-shadow space-y-3">
+          <h4 class="text-xs font-bold text-stone-500 uppercase">توزيع المصاريف حسب الفرد</h4>
+          <div class="space-y-2 text-xs font-bold">
+            <div class="flex justify-between items-center">
+              <span>أبو القاسم</span>
+              <span class="text-amber-900 font-mono">4,250 ريال</span>
+            </div>
+            <div class="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-800 w-[60%]"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-[#EBE5DA] card-shadow space-y-3">
+          <h4 class="text-xs font-bold text-stone-500 uppercase">توزيع المصاريف حسب التصنيف</h4>
+          <div class="space-y-2 text-xs font-bold">
+            <div class="flex justify-between items-center">
+              <span>أجهزة ومشتريات</span>
+              <span class="text-emerald-700 font-mono">65%</span>
+            </div>
+            <div class="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-700 w-[65%]"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 10: Conclusion & Link -->
+    <div class="slide flex-col items-center text-center max-w-3xl space-y-6">
+      <div class="w-16 h-16 rounded-3xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 text-3xl shadow-md">
+        🚀
+      </div>
+
+      <h2 class="text-3xl sm:text-5xl font-black text-stone-900">
+        جاهزون للبدء في استخدام المنظومة؟
+      </h2>
+
+      <p class="text-sm sm:text-base text-stone-600 font-medium max-w-lg">
+        المنصة مجهزة ومتاحة الآن على جميع الجوالات والآيباد والكمبيوتر.
+      </p>
+
+      <div class="bg-white p-6 rounded-3xl border border-[#EBE5DA] card-shadow w-full max-w-md space-y-3">
+        <span class="text-xs font-bold text-stone-500 block">رابط المنظومة المباشر:</span>
+        <a href="https://home.abuelgasim.me" target="_blank" class="block text-xl font-black text-amber-900 hover:underline dir-ltr font-mono bg-amber-50 p-3 rounded-2xl border border-amber-200">
+          home.abuelgasim.me
+        </a>
+        <p class="text-[11px] text-stone-500 font-medium">💡 يمكنكم حفظ الرابط على الشاشة الرئيسية للجوال ليصبح كتطبيق مستقر.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Controls -->
+  <footer class="w-full px-6 py-4 border-t border-[#EBE5DA] bg-white/90 backdrop-blur-md z-30 flex items-center justify-between">
+    <button id="prevBtn" onclick="changeSlide(-1)" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border border-stone-200 disabled:opacity-40 disabled:cursor-not-allowed">
+      <i data-lucide="chevron-right" class="w-4 h-4"></i>
+      <span>السابقة</span>
+    </button>
+
+    <!-- Dots Container -->
+    <div id="dotsContainer" class="flex items-center gap-1.5 overflow-x-auto px-2"></div>
+
+    <button id="nextBtn" onclick="changeSlide(1)" class="px-5 py-2 bg-amber-900 hover:bg-amber-950 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-amber-900/20">
+      <span>التالية</span>
+      <i data-lucide="chevron-left" class="w-4 h-4"></i>
+    </button>
+  </footer>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    function updatePresentation() {
+      slides.forEach((slide, index) => {
+        slide.classList.toggle('active', index === currentSlide);
+      });
+
+      document.getElementById('currentSlideNum').innerText = currentSlide + 1;
+      document.getElementById('totalSlidesNum').innerText = totalSlides;
+
+      const progressPercent = ((currentSlide + 1) / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+      document.getElementById('prevBtn').disabled = currentSlide === 0;
+      const nextBtn = document.getElementById('nextBtn');
+      if (currentSlide === totalSlides - 1) {
+        nextBtn.innerHTML = `<span>إنهاء العرض</span> <i data-lucide="check" class="w-4 h-4"></i>`;
+      } else {
+        nextBtn.innerHTML = `<span>التالية</span> <i data-lucide="chevron-left" class="w-4 h-4"></i>`;
+      }
+
+      renderDots();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function changeSlide(direction) {
+      currentSlide = Math.max(0, Math.min(totalSlides - 1, currentSlide + direction));
+      updatePresentation();
+    }
+
+    function goToSlide(index) {
+      currentSlide = index;
+      updatePresentation();
+    }
+
+    function renderDots() {
+      const container = document.getElementById('dotsContainer');
+      container.innerHTML = '';
+      for (let i = 0; i < totalSlides; i++) {
+        const dot = document.createElement('button');
+        dot.className = `w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${i === currentSlide ? 'bg-amber-900 w-6' : 'bg-stone-300 hover:bg-stone-400'}`;
+        dot.onclick = () => goToSlide(i);
+        container.appendChild(dot);
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    // Keyboard Arrow navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'Space') {
+        changeSlide(1);
+      } else if (e.key === 'ArrowRight') {
+        changeSlide(-1);
+      }
+    });
+
+    // Touch Swipe support
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', e => {
+      let touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) changeSlide(1); // Swipe left -> Next
+      if (touchEndX - touchStartX > 50) changeSlide(-1); // Swipe right -> Prev
+    });
+
+    // Initialize
+    updatePresentation();
+  </script>
+</body>
+</html>
